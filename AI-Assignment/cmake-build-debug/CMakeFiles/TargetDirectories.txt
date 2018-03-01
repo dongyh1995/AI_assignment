@@ -1,3 +1,0 @@
-/home/yihong/C++/AI-Assignment/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/yihong/C++/AI-Assignment/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/yihong/C++/AI-Assignment/cmake-build-debug/CMakeFiles/AI_Assignment.dir
