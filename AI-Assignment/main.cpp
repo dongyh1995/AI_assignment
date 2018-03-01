@@ -1,8 +1,22 @@
 #include <iostream>
 #include<vector>
 #include<math.h>
-#define N 10        //size of board
+#define N 20        //size of board
+
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
+#endif
+
 #define m 5
+
+using namespace std;
+
+
+#define N_SIZE 20
+#define MARGIN 0.08
+
 using namespace std;
 
 class Agent{
@@ -253,12 +267,13 @@ public:
     /**
      * Move one step
      */
-    void move(){
+    pair<int,int> move(){
         pair<int,int> pos = calculation();
 
 //        cout<<pos.first<<" "<<pos.second<<endl;
 
         board[pos.first][pos.second] = id;
+        return pos;
     }
 
     static int board[N][N];
@@ -295,21 +310,204 @@ void Initialize(){
 //    Agent::board[][] = 2;
 }
 
-int main() {
-    Agent player1('X');
-    Agent player2('O');
+
+Agent player1('X');
+Agent player2('O');
+
+
+
+double myround(double r)
+{
+    return (r > 0.0) ? floor(r + 0.5) : ceil(r - 0.5);
+}
+
+void draw_solid_circle(float x, float y, float radius, bool user)
+{
+    int count;
+    int sections=200;
+
+    GLfloat TWOPI=2.0f * 3.14159f;
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(x, y);
+
+    cout << "here" << endl;
+    for(count=0; count<=sections; count++)
+    {
+        if(user) {
+            glColor3f(0.0f,0.0f, 0.0f);
+        }else {
+            glColor3f(1.0f,1.0f, 1.0f);
+        }
+        glVertex2f(x+radius*cos(count*TWOPI/sections), y+radius*sin(count*TWOPI/sections));
+    }
+    glEnd();
+
+    glFlush();
+}
+
+void draw(double x_index, double y_index, bool user) {
+    double each_width = (2.0 - 2 * MARGIN) / (N_SIZE - 1);
+    double draw_x = x_index * each_width + MARGIN - 1;
+    double draw_y = y_index * each_width + MARGIN - 1;
+
+//    draw_solid_circle(draw_x,draw_y, each_width / 3,user);
+
+    cout << x_index << "," <<y_index << endl;
+
+    if(user) {
+        glColor3f(1.0f,1.0f, 1.0f);
+    }else {
+        glColor3f(0.0f,0.0f, 0.0f);
+    }
+
+    glRectf(draw_x + each_width / 3, draw_y + each_width / 3, draw_x - each_width / 3, draw_y - each_width / 3);
+    glFlush();
+}
+
+void DrawCircle(int x_index, int y_index,  bool user) {
+
+    double each_width = (2.0 - 2 * MARGIN) / (N_SIZE - 1);
+    double cx = x_index * each_width + MARGIN - 1;
+    double cy = y_index * each_width + MARGIN - 1;
+    int num_segments = 100;
+    float r = each_width / 3;
+
+    glBegin(GL_TRIANGLE_FAN);
+
+    if(user) {
+        glColor3f(1.0f,1.0f, 1.0f);
+    }else {
+        glColor3f(0.0f,0.0f, 0.0f);
+    }
+
+    for (int ii = 0; ii < num_segments; ii++)   {
+        float theta = 2.0f * 3.1415926f * float(ii) / float(num_segments);//get the current angle
+        float x = r * cosf(theta);//calculate the x component
+        float y = r * sinf(theta);//calculate the y component
+        glVertex2f(x + cx, y + cy);//output vertex
+    }
+    glEnd();
+    glFlush();
+}
+
+void RenderScene()
+
+{
+    glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(0.0f,0.0f, 0.0f);
+
+    GLfloat curSizeLine=1;
+
+    double each_width = (2.0 - 2 * MARGIN) / (N_SIZE - 1);
+
+    for(double current = -1 + MARGIN ; current < 1 - MARGIN ; current += each_width) {
+
+        glLineWidth(curSizeLine);
+
+        glBegin(GL_LINES);
+        glVertex2f(current,-1 + MARGIN);
+        glVertex2f(current, 1 - MARGIN);
+        glEnd();
+
+        glBegin(GL_LINES);
+        glVertex2f(-1 + MARGIN,current);
+        glVertex2f( 1 - MARGIN,current);
+        glEnd();
+
+    }
+    glFlush();
+
+//    draw(5,5,false);
+//    draw(4,4,true);
+
+
+
+}
+
+
+//用于初始化，常用来设置场景的渲染状态
+
+void SetupRC(void)
+{
+    glClearColor(0.8f,0.6f, 0.3f,1.0f);
+}
+
+
+
+
+
+
+void mouseCB(int button, int state, int x, int y)
+{
+    double mouseX = (double)x / 250 - 1, mouseY = 1 - (double)y / 250;
+
+    double each_width = (2.0 - 2 * MARGIN) / (N_SIZE - 1);
+
+    if(button == GLUT_LEFT_BUTTON)
+    {
+        if(state == GLUT_DOWN)
+        {
+            // find the nearest index
+            int x_index = round((mouseX + 1 - MARGIN) / each_width);
+            int y_index = round((mouseY + 1 - MARGIN) / each_width);
+
+            if(Agent::board[x_index][y_index] != 0)
+                return;
+
+            Agent::board[x_index][y_index] = 2;
+
+            DrawCircle(x_index,y_index,true);
+
+            pair<int,int> new_move = player1.move();
+
+            DrawCircle(new_move.first,new_move.second,false);
+
+        }
+    }
+}
+
+void prevent_resize(int width, int height)  {
+    glutReshapeWindow(500, 500);
+}
+
+void helper(int argc,char** argv)
+{
+    glutInit(&argc, argv);
+
+    glutInitDisplayMode (GLUT_SINGLE |GLUT_RGB |GLUT_DEPTH);
+
+    glutInitWindowSize (500,500);
+
+    glutInitWindowPosition (100,100);
+
+    glutCreateWindow ("大哥五子棋");
+
+    glutMouseFunc(mouseCB);
+
+    glutDisplayFunc(RenderScene);
+
+    glutReshapeFunc(prevent_resize);
+
+    SetupRC();
+
+    glutMainLoop();
+}
+
+
+
+int main(int argn, char **arguments) {
+
     int i=8;
     int pos_i,pos_j;
 //    Initialize();
-    Agent::board[5][5] = 1;
-    Agent::board[4][4] = 2;
+//    Agent::board[5][5] = 1;
+//    Agent::board[4][4] = 2;
     Agent::display();
-    while(1){
-        player1.move();
-        Agent::display();
-        cout<<"Your turn"<<endl;
-        cin>>pos_i>>pos_j;
-        Agent::board[pos_i][pos_j] = 2;
-//        player2.move();
-    }
+
+    helper(argn, arguments);
+
 }
+
+
+
